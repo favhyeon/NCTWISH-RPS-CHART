@@ -574,6 +574,7 @@ function createLrGrid() {
             lrData.texts[index] = text.value;
             charCount.textContent = `${text.value.length}/150`;
             saveLrData();
+            autoResizeTextarea(text);
         });
 
         textWrap.appendChild(text);
@@ -586,6 +587,17 @@ function createLrGrid() {
 
         lrGrid.appendChild(row);
     });
+
+    /* 저장돼 있던 글이 여러 줄이어도 처음부터 잘리지 않도록,
+       모든 칸을 한 번씩 실제 내용 높이에 맞춰준다. */
+    lrGrid.querySelectorAll(".lr-text").forEach(autoResizeTextarea);
+}
+
+/* 칸에 적은 글이 늘어나면 잘리는 대신 칸 자체가 자연스럽게 늘어나도록.
+   grid 행이 auto 높이라 아래 칸들과 겹치지 않고 밀려 내려간다. */
+function autoResizeTextarea(el) {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
 }
 
 function toggleLrCell(memberIndex, cellIndex, cellEl) {
