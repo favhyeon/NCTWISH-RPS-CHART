@@ -34,14 +34,16 @@ const defaultPhotos = [
 /*
  * 표에 표시할 커플명.
  * [행 멤버][열 멤버] 순서.
+ * 첨부해주신 표 이미지를 보고 옮긴 값이라 오타 가능성이 있어요.
+ * 아래 답변에서 표로 다시 정리해뒀으니 한 번만 확인 부탁드려요.
  */
 const pairNames = [
-    ["—",   "숀쿨", "온윳", "숀댕", "숀료", "숀샄"],
-    ["쿨숀", "—",   "쿨융", "쿨댕", "쿨료", "맄샄"],
-    ["윳숀", "윳쿨", "—",   "윳댕", "윳료", "윳샄"],
-    ["댕숀", "댕쿨", "댕윳", "—",   "댕료", "댕샄"],
-    ["료숀", "료쿨", "료윳", "료댕", "—",   "료샄"],
-    ["샄숀", "샄맄", "샄윳", "샄댕", "샄료", "—"]
+    ["—",   "순쿨", "온욧", "손댱", "손료", "손삭"],
+    ["쿨순", "—",   "쿨윳", "쿨댱", "쿨료", "릭삭"],
+    ["윳손", "윳쿨", "—",   "윳댱", "윳료", "윳삭"],
+    ["댱손", "댱쿨", "댱윳", "—",   "댱료", "댱삭"],
+    ["료손", "료쿨", "료윳", "료댱", "—",   "료삭"],
+    ["삭손", "삭릭", "삭윳", "삭댱", "삭료", "—"]
 ];
 
 const options = [
@@ -670,7 +672,24 @@ saveBtn.addEventListener("click", async () => {
             useCORS: true,
             logging: false,
             windowWidth: DESKTOP_CAPTURE_WIDTH,
-            windowHeight: Math.max(area.scrollHeight, 1600)
+            windowHeight: Math.max(area.scrollHeight, 1600),
+            /*
+             * html2canvas는 textarea 안의 줄바꿈/자동 줄바꿈을 제대로
+             * 그리지 못해서(한 줄로만 렌더링되며 잘려 보임), 캡처용으로
+             * 복제된 문서 안에서만 textarea를 똑같이 생긴 div로 바꿔치기한다.
+             * 실제 화면의 textarea(입력 가능 상태)는 건드리지 않는다.
+             */
+            onclone: (clonedDoc) => {
+                clonedDoc.querySelectorAll(".lr-text").forEach((ta) => {
+                    const div = clonedDoc.createElement("div");
+                    div.className = "lr-text";
+                    div.style.whiteSpace = "pre-wrap";
+                    div.style.wordBreak = "break-word";
+                    div.style.overflow = "hidden";
+                    div.textContent = ta.value;
+                    ta.replaceWith(div);
+                });
+            }
         });
 
         /*
