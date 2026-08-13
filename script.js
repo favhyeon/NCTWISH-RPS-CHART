@@ -11,6 +11,9 @@ const members = [
     "사쿠야"
 ];
 
+/* 멤버별 본인 이니셜 (본인조합, 행/열 숨기기 문구에 사용) */
+const ownInitials = ["숀", "쿨", "윳", "댕", "료", "샄"];
+
 /* 멤버별 기본 아바타 색상 (사진 로드 실패 시 대체용) */
 const memberColors = [
     "#ff9ec8",
@@ -438,7 +441,7 @@ function renderModalExtra(titleText) {
     const isRow = currentTarget.type === "row";
     const index = currentTarget.index;
     const hiddenSet = isRow ? hiddenRows : hiddenCols;
-    const suffix = isRow ? "행" : "열";
+    const suffix = isRow ? "왼" : "른";
 
     const hideLabel = document.createElement("label");
     hideLabel.className = "hide-toggle";
@@ -459,7 +462,7 @@ function renderModalExtra(titleText) {
     });
 
     hideLabel.appendChild(hideInput);
-    hideLabel.appendChild(document.createTextNode(`${members[index]} ${suffix} 숨기기`));
+    hideLabel.appendChild(document.createTextNode(`${ownInitials[index]}${suffix} 없애기`));
 
     modalExtra.appendChild(hideLabel);
 }
