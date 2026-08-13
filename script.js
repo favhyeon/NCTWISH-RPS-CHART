@@ -34,16 +34,17 @@ const defaultPhotos = [
 /*
  * 표에 표시할 커플명.
  * [행 멤버][열 멤버] 순서.
+ * 대각선(본인조합)은 각 멤버 본인의 이니셜을 두 번 합쳐서 만들었어요.
  * 첨부해주신 표 이미지를 보고 옮긴 값이라 오타 가능성이 있어요.
  * 아래 답변에서 표로 다시 정리해뒀으니 한 번만 확인 부탁드려요.
  */
 const pairNames = [
-    ["—",   "숀쿨", "온윳", "숀댕", "숀료", "숀샄"],
-    ["쿨숀", "—",   "쿨융", "쿨댕", "쿨료", "맄샄"],
-    ["윳숀", "윳쿨", "—",   "윳댕", "윳료", "윳샄"],
-    ["댕숀", "댕쿨", "댕윳", "—",   "댕료", "댕샄"],
-    ["료숀", "료쿨", "료윳", "료댕", "—",   "료샄"],
-    ["샄숀", "샄맄", "샄윳", "샄댕", "샄료", "—"]
+    ["숀숀", "숀쿨", "온윳", "숀댕", "숀료", "숀샄"],
+    ["쿨숀", "쿨쿨", "쿨융", "쿨댕", "쿨료", "맄샄"],
+    ["윳숀", "윳쿨", "윳윳", "윳댕", "윳료", "윳샄"],
+    ["댕숀", "댕쿨", "댕윳", "댕댕", "댕료", "댕샄"],
+    ["료숀", "료쿨", "료윳", "료댕", "료료", "료샄"],
+    ["샄숀", "샄맄", "샄윳", "샄댕", "샄료", "샄샄"]
 ];
 
 const options = [
@@ -79,6 +80,19 @@ function resetCustomColors() {
 const STORAGE_KEY = "nctwish-wit-rps";
 const LR_STORAGE_KEY = "nctwish-lr-rps";
 const LR_CELL_COUNT = 12;
+
+/* 행/열 개별 숨기기 상태 (멤버 인덱스 기준, rows/cols 따로 관리) */
+const HIDDEN_KEY = "nctwish-hidden-members";
+const hiddenSaved = JSON.parse(localStorage.getItem(HIDDEN_KEY)) || { rows: [], cols: [] };
+let hiddenRows = new Set(hiddenSaved.rows);
+let hiddenCols = new Set(hiddenSaved.cols);
+
+function saveHiddenState() {
+    localStorage.setItem(HIDDEN_KEY, JSON.stringify({
+        rows: [...hiddenRows],
+        cols: [...hiddenCols]
+    }));
+}
 
 const table = document.getElementById("chartTable");
 const modal = document.getElementById("modal");
@@ -232,19 +246,22 @@ tabLr.addEventListener("click", () => switchTab("lr"));
 function createTable() {
     table.innerHTML = "";
 
+    const visibleColIndexes = members.map((_, i) => i).filter(i => !hiddenCols.has(i));
+    const visibleRowIndexes = members.map((_, i) => i).filter(i => !hiddenRows.has(i));
+
     const head = document.createElement("tr");
     const empty = document.createElement("th");
     empty.className = "corner";
     head.appendChild(empty);
 
-    members.forEach((member, colIndex) => {
+    visibleColIndexes.forEach(colIndex => {
         const th = document.createElement("th");
-        th.textContent = member;
+        th.textContent = members[colIndex];
         th.classList.add("clickable-header");
 
         th.addEventListener("click", () => {
             currentTarget = { type: "col", index: colIndex };
-            openModal(member);
+            openModal(members[colIndex]);
         });
 
         head.appendChild(th);
@@ -252,39 +269,38 @@ function createTable() {
 
     table.appendChild(head);
 
-    members.forEach((row, rowIndex) => {
+    visibleRowIndexes.forEach(rowIndex => {
         const tr = document.createElement("tr");
 
         const rowHead = document.createElement("th");
-        rowHead.textContent = row;
+        rowHead.textContent = members[rowIndex];
         rowHead.classList.add("clickable-header");
 
         rowHead.addEventListener("click", () => {
             currentTarget = { type: "row", index: rowIndex };
-            openModal(row);
+            openModal(members[rowIndex]);
         });
 
         tr.appendChild(rowHead);
 
-        members.forEach((col, colIndex) => {
+        visibleColIndexes.forEach(colIndex => {
             const td = document.createElement("td");
             td.dataset.key = `${rowIndex}-${colIndex}`;
 
+            td.textContent = pairNames[rowIndex][colIndex];
+
             if (rowIndex === colIndex) {
-                td.textContent = "—";
                 td.classList.add("diagonal");
-            } else {
-                td.textContent = pairNames[rowIndex][colIndex];
-
-                if (saveData[td.dataset.key]) {
-                    td.style.backgroundColor = saveData[td.dataset.key];
-                }
-
-                td.addEventListener("click", () => {
-                    currentTarget = { type: "cell", td };
-                    openModal(pairNames[rowIndex][colIndex]);
-                });
             }
+
+            if (saveData[td.dataset.key]) {
+                td.style.backgroundColor = saveData[td.dataset.key];
+            }
+
+            td.addEventListener("click", () => {
+                currentTarget = { type: "cell", td };
+                openModal(pairNames[rowIndex][colIndex]);
+            });
 
             tr.appendChild(td);
         });
@@ -390,31 +406,71 @@ function openModal(titleText) {
 
     modal.classList.remove("hidden");
 
-    // 색상 전체 초기화 링크
-    let resetLink = document.getElementById("resetColorsLink");
-    if (!resetLink) {
-        resetLink = document.createElement("div");
-        resetLink.id = "resetColorsLink";
-        resetLink.className = "reset-colors-link";
-        resetLink.textContent = "색상 기본값으로 되돌리기";
-        resetLink.addEventListener("click", () => {
-            resetCustomColors();
-            renderLegend();
-            openModal(titleText);
-        });
-        optionGrid.insertAdjacentElement("afterend", resetLink);
-    }
+    renderModalExtra(titleText);
 }
 
-function setCellColor(td, color) {
-    if (!td) return;
+/* 모달 하단(색상 기본값 되돌리기 + 행/열 숨기기 체크박스) 영역.
+   모달을 열 때마다 currentTarget 기준으로 다시 그린다. */
+function renderModalExtra(titleText) {
+    let modalExtra = document.getElementById("modalExtra");
+    if (!modalExtra) {
+        modalExtra = document.createElement("div");
+        modalExtra.id = "modalExtra";
+        modalExtra.className = "modal-extra";
+        optionGrid.insertAdjacentElement("afterend", modalExtra);
+    }
+    modalExtra.innerHTML = "";
 
+    const resetLink = document.createElement("div");
+    resetLink.className = "reset-colors-link";
+    resetLink.textContent = "색상 기본값으로 되돌리기";
+    resetLink.addEventListener("click", () => {
+        resetCustomColors();
+        renderLegend();
+        openModal(titleText);
+    });
+    modalExtra.appendChild(resetLink);
+
+    if (!currentTarget || (currentTarget.type !== "row" && currentTarget.type !== "col")) {
+        return;
+    }
+
+    const isRow = currentTarget.type === "row";
+    const index = currentTarget.index;
+    const hiddenSet = isRow ? hiddenRows : hiddenCols;
+    const suffix = isRow ? "행" : "열";
+
+    const hideLabel = document.createElement("label");
+    hideLabel.className = "hide-toggle";
+
+    const hideInput = document.createElement("input");
+    hideInput.type = "checkbox";
+    hideInput.checked = hiddenSet.has(index);
+
+    hideInput.addEventListener("change", () => {
+        if (hideInput.checked) {
+            hiddenSet.add(index);
+        } else {
+            hiddenSet.delete(index);
+        }
+        saveHiddenState();
+        createTable();
+        modal.classList.add("hidden");
+    });
+
+    hideLabel.appendChild(hideInput);
+    hideLabel.appendChild(document.createTextNode(`${members[index]} ${suffix} 숨기기`));
+
+    modalExtra.appendChild(hideLabel);
+}
+
+function setCellColor(td, key, color) {
     if (color) {
-        td.style.backgroundColor = color;
-        saveData[td.dataset.key] = color;
+        if (td) td.style.backgroundColor = color;
+        saveData[key] = color;
     } else {
-        td.style.backgroundColor = "#ffffff";
-        delete saveData[td.dataset.key];
+        if (td) td.style.backgroundColor = "#ffffff";
+        delete saveData[key];
     }
 }
 
@@ -424,20 +480,20 @@ function applySelection(color) {
     pushHistory();
 
     if (currentTarget.type === "cell") {
-        setCellColor(currentTarget.td, color);
+        setCellColor(currentTarget.td, currentTarget.td.dataset.key, color);
     } else if (currentTarget.type === "row") {
         const rowIndex = currentTarget.index;
         members.forEach((_, colIndex) => {
-            if (colIndex === rowIndex) return;
-            const td = table.querySelector(`td[data-key="${rowIndex}-${colIndex}"]`);
-            setCellColor(td, color);
+            const key = `${rowIndex}-${colIndex}`;
+            const td = table.querySelector(`td[data-key="${key}"]`);
+            setCellColor(td, key, color);
         });
     } else if (currentTarget.type === "col") {
         const colIndex = currentTarget.index;
         members.forEach((_, rowIndex) => {
-            if (rowIndex === colIndex) return;
-            const td = table.querySelector(`td[data-key="${rowIndex}-${colIndex}"]`);
-            setCellColor(td, color);
+            const key = `${rowIndex}-${colIndex}`;
+            const td = table.querySelector(`td[data-key="${key}"]`);
+            setCellColor(td, key, color);
         });
     }
 
@@ -644,7 +700,10 @@ resetBtn.addEventListener("click", () => {
 
     if (currentTab === "rps") {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(HIDDEN_KEY);
         saveData = {};
+        hiddenRows = new Set();
+        hiddenCols = new Set();
         historyStack = [];
         redoStack = [];
         updateNavButtons();

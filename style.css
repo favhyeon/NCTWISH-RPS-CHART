@@ -197,14 +197,10 @@ td {
     transition: .15s;
 }
 
-td:not(.diagonal):hover {
+td:hover {
     transform: scale(1.025);
     position: relative;
     z-index: 2;
-}
-
-td.diagonal {
-    cursor: default;
 }
 
 /* ===========================
@@ -636,6 +632,33 @@ button:hover {
 
 .reset-colors-link:hover {
     color: #8fb200;
+}
+
+.modal-extra {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.hide-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #666;
+    cursor: pointer;
+    user-select: none;
+}
+
+.hide-toggle input {
+    width: 16px;
+    height: 16px;
+    accent-color: #8fb200;
+    cursor: pointer;
 }
 
 .clear-card .option-dot {
