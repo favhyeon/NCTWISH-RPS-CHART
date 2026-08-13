@@ -147,7 +147,7 @@ const scaleWrap = document.getElementById("scaleWrap");
 /* CSS의 @media (max-width: 768px)과 동일한 기준.
    이 폭 이하에서는 JS로 축소하지 않고, 반응형 레이아웃을 그대로 사용한다. */
 const MOBILE_BREAKPOINT = 768;
-const DESKTOP_CAPTURE_WIDTH = 1400;
+const DESKTOP_CAPTURE_WIDTH = 1100;
 
 let currentTarget = null; // { type: "cell", td } | { type: "row", index } | { type: "col", index }
 let currentTab = "rps";
@@ -764,7 +764,7 @@ saveBtn.addEventListener("click", async () => {
     area.classList.add("capturing");
 
     /* 화면(특히 모바일)에 적용돼 있던 축소/반응형 스타일을 잠시 걷어내고,
-       항상 PC 버전과 동일한 1400px 레이아웃으로 저장되도록 한다. */
+       항상 PC 버전과 동일한 1100px 레이아웃으로 저장되도록 한다. */
     const prevTransform = area.style.transform;
     area.style.transform = "none";
 
