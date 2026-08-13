@@ -128,7 +128,8 @@ h1 {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-bottom: 8px;
+    max-width: 980px;
+    margin: 0 auto 8px;
 }
 
 .nav-btn {
@@ -158,6 +159,8 @@ h1 {
 
 table {
     width: 100%;
+    max-width: 980px;
+    margin: 0 auto;
     border-collapse: collapse;
     table-layout: fixed;
     overflow: hidden;
@@ -167,14 +170,14 @@ table {
 th {
     background: #BBE309;
     color: #1a1a1a;
-    height: 82px;
-    font-size: 28px;
+    height: 68px;
+    font-size: 23px;
     font-weight: 800;
     border: 1px solid rgba(255,255,255,.45);
 }
 
 th:first-child {
-    width: 170px;
+    width: 140px;
 }
 
 .clickable-header {
@@ -187,9 +190,9 @@ th:first-child {
 }
 
 td {
-    height: 82px;
+    height: 68px;
     text-align: center;
-    font-size: 28px;
+    font-size: 23px;
     font-weight: 700;
     background: #fff;
     border: 1px solid #e3e3e3;
@@ -444,6 +447,9 @@ button:hover {
 .date-toggle-wrap {
     display: flex;
     justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 22px;
     margin-top: 20px;
 }
 

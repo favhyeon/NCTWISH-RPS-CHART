@@ -97,6 +97,20 @@ function saveHiddenState() {
     }));
 }
 
+/* 자공자수(본인조합, 대각선 칸) 표시 여부 - 체크박스로 켜고 끔
+   기본값은 켜짐(기존 동작과 동일)이라, 꺼본 적 없는 사용자는 "0"이 저장돼 있지 않다. */
+const SELF_PAIR_KEY = "nctwish-include-selfpair";
+let includeSelfPair = localStorage.getItem(SELF_PAIR_KEY) !== "0";
+
+/* 대각선(본인×본인) 칸을 표시할지 여부에 따라 실제로 화면/이미지에 그릴 텍스트를 반환한다.
+   토글이 꺼져 있으면 "-"를 보여준다. */
+function getDisplayPairName(rowIndex, colIndex) {
+    if (rowIndex === colIndex && !includeSelfPair) {
+        return "-";
+    }
+    return pairNames[rowIndex][colIndex];
+}
+
 const table = document.getElementById("chartTable");
 const modal = document.getElementById("modal");
 const modalTitle = document.getElementById("modalTitle");
@@ -113,6 +127,7 @@ const dateToggleWrap = document.getElementById("dateToggleWrap");
 const dateToggle = document.getElementById("dateToggle");
 const dateTextRps = document.getElementById("dateTextRps");
 const dateTextLr = document.getElementById("dateTextLr");
+const selfPairToggle = document.getElementById("selfPairToggle");
 
 const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
@@ -209,6 +224,20 @@ function updateDateDisplay() {
 
 dateToggle.addEventListener("change", updateDateDisplay);
 
+/* ==========================================
+   자공자수 표시 토글
+========================================== */
+
+if (selfPairToggle) {
+    selfPairToggle.checked = includeSelfPair;
+
+    selfPairToggle.addEventListener("change", () => {
+        includeSelfPair = selfPairToggle.checked;
+        localStorage.setItem(SELF_PAIR_KEY, includeSelfPair ? "1" : "0");
+        createTable();
+    });
+}
+
 createTable();
 createLrGrid();
 updateNavButtons();
@@ -290,7 +319,7 @@ function createTable() {
             const td = document.createElement("td");
             td.dataset.key = `${rowIndex}-${colIndex}`;
 
-            td.textContent = pairNames[rowIndex][colIndex];
+            td.textContent = getDisplayPairName(rowIndex, colIndex);
 
             if (rowIndex === colIndex) {
                 td.classList.add("diagonal");
@@ -302,7 +331,7 @@ function createTable() {
 
             td.addEventListener("click", () => {
                 currentTarget = { type: "cell", td };
-                openModal(pairNames[rowIndex][colIndex]);
+                openModal(getDisplayPairName(rowIndex, colIndex));
             });
 
             tr.appendChild(td);
